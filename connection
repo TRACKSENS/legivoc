@@ -1,0 +1,60 @@
+import requests
+import time
+import re
+import os
+
+
+
+def connection(limit, nbrOfReq, fileName):
+
+
+    request1 = """  PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX skos:<http://www.w3.org/2004/02/skos/core#>
+                    PREFIX skosxl:<http://www.w3.org/2008/05/skos-xl#>
+                    
+                   CONSTRUCT {
+                      ?s ?p ?o .
+                   }
+                    WHERE {
+                       ?s ?p ?o .
+                    }
+                    ORDER BY ?s ?p ?o 
+                    """
+
+    request1 = request1 + " LIMIT " + str(limit) + " OFFSET " + str(nbrOfReq*limit)
+
+    time.sleep(0.2)
+
+    r= requests.post('http://legivoc.org/sparql_form', auth=('salbouze@tracksens.com', 'LouiseALB*'), params = {'xml':'1','query': request1, 'db':fileName})
+
+    return r.text.strip()
+
+if __name__== "__main__":
+
+    text = " "
+    limit = 10000
+    nbrOfReq = 0
+    finalText = ""
+    endOfFile = False
+
+    if not os.path.exists("./results"):
+        os.mkdir("./results")
+
+    File_list = ["at", "be", "de", "dk", "es", "eu", "fi", "fr", "gr", "lt", "mt", "nl", "si", "uk", "ch"]
+
+    for elt in enumerate(File_list):
+        fileName = elt[1] + ".rdf"
+
+        if not os.path.exists("./results/" + elt[1]):
+            os.mkdir("./results/" + elt[1])
+
+        while (text != "") :
+            text = connection(limit, nbrOfReq, fileName)
+
+            with open("./results/"+elt[1] + "/"+elt[1]+"_"+str(nbrOfReq)+".xml", "a", encoding="utf-8") as myLexic:
+                myLexic.write(text)
+
+            nbrOfReq += 1
+
+
+    print("The end")
